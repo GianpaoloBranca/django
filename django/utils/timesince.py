@@ -88,6 +88,9 @@ def timesince(d, now=None, reversed=False, time_strings=None, depth=2):
         if count == 0:
             break
         result.append(avoid_wrapping(time_strings[name] % {"num": count}))
+        # prevent errors in long intervals
+        if name == "month" and count > 2:
+            seconds += 10 * 60 * 60
         since -= seconds * count
         current_depth += 1
         i += 1

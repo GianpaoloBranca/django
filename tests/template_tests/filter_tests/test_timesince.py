@@ -147,6 +147,14 @@ class TimesinceTests(TimezoneTestCase):
         )
         self.assertEqual(output, "1\xa0day")
 
+    # Test for #33879 (wrong results for 11 months + several weeks)
+    @setup({"timesince19": "{{ earlier|timesince }}"})
+    def test_timesince19(self):
+        output = self.engine.render_to_string(
+            "timesince19", {"earlier": self.today - timedelta(days=358)}
+        )
+        self.assertEqual(output, "11\xa0months, 3\xa0weeks")
+
 
 class FunctionTests(SimpleTestCase):
     def test_since_now(self):

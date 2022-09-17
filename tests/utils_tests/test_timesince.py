@@ -16,7 +16,7 @@ class TimesinceTests(TestCase):
         self.onehour = datetime.timedelta(hours=1)
         self.oneday = datetime.timedelta(days=1)
         self.oneweek = datetime.timedelta(days=7)
-        self.onemonth = datetime.timedelta(days=30)
+        self.onemonth = datetime.timedelta(days=31)
         self.oneyear = datetime.timedelta(days=365)
 
     def test_equal_datetimes(self):

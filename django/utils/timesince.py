@@ -23,6 +23,8 @@ TIMESINCE_CHUNKS = (
     (60, "minute"),
 )
 
+MONTHS_DAYS = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+
 
 def timesince(d, now=None, reversed=False, time_strings=None, depth=2):
     """
@@ -69,28 +71,36 @@ def timesince(d, now=None, reversed=False, time_strings=None, depth=2):
             leapdays += 1
     delta -= datetime.timedelta(leapdays)
 
+    # fix months duration to be relative to the months between d and now
+    months = now.month - d.month
+    if months > 0:
+        m_days = (sum(MONTHS_DAYS[d.month - 1 : now.month - 1])) / months
+    else:
+        m_days = (365 - sum(MONTHS_DAYS[now.month - 1 : d.month - 1])) / (12 + months)
+    timesince_chunks_adjusted = list(TIMESINCE_CHUNKS)
+    timesince_chunks_adjusted[1] = (int(m_days * 24 * 60 * 60), "month")
+
     # ignore microseconds
     since = delta.days * 24 * 60 * 60 + delta.seconds
     if since <= 0:
         # d is in the future compared to now, stop processing.
         return avoid_wrapping(time_strings["minute"] % {"num": 0})
-    for i, (seconds, name) in enumerate(TIMESINCE_CHUNKS):
+    for i, (seconds, name) in enumerate(timesince_chunks_adjusted):
         count = since // seconds
         if count != 0:
             break
     else:
         return avoid_wrapping(time_strings["minute"] % {"num": 0})
+
     result = []
     current_depth = 0
-    while i < len(TIMESINCE_CHUNKS) and current_depth < depth:
-        seconds, name = TIMESINCE_CHUNKS[i]
+
+    while i < len(timesince_chunks_adjusted) and current_depth < depth:
+        seconds, name = timesince_chunks_adjusted[i]
         count = since // seconds
         if count == 0:
             break
         result.append(avoid_wrapping(time_strings[name] % {"num": count}))
-        # prevent errors in long intervals
-        if name == "month" and count > 2:
-            seconds += 10 * 60 * 60
         since -= seconds * count
         current_depth += 1
         i += 1

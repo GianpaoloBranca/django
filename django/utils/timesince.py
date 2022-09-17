@@ -95,9 +95,14 @@ def timesince(d, now=None, reversed=False, time_strings=None, depth=2):
     result = []
     current_depth = 0
 
+    if months <= 0:
+        months = 12 + months
+
     while i < len(timesince_chunks_adjusted) and current_depth < depth:
         seconds, name = timesince_chunks_adjusted[i]
         count = since // seconds
+        if name == "month":
+            count = min(count, months)
         if count == 0:
             break
         result.append(avoid_wrapping(time_strings[name] % {"num": count}))

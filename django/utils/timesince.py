@@ -71,21 +71,22 @@ def timesince(d, now=None, reversed=False, time_strings=None, depth=2):
             leapdays += 1
     delta -= datetime.timedelta(leapdays)
 
-    # fix months duration to be relative to the months between d and now
+    # adjust months duration to be relative to the months between d and now
     months = now.month - d.month
     if months > 0:
         m_days = (sum(MONTHS_DAYS[d.month - 1 : now.month - 1])) / months
     else:
-        m_days = (365 - sum(MONTHS_DAYS[now.month - 1 : d.month - 1])) / (12 + months)
-    timesince_chunks_adjusted = list(TIMESINCE_CHUNKS)
-    timesince_chunks_adjusted[1] = (int(m_days * 24 * 60 * 60), "month")
+        months = 12 + months  # note: we also need this later to fix edge cases.
+        m_days = (365 - sum(MONTHS_DAYS[now.month - 1 : d.month - 1])) / months
+    time_chunks = list(TIMESINCE_CHUNKS)
+    time_chunks[1] = (int(m_days * 24 * 60 * 60), "month")
 
     # ignore microseconds
     since = delta.days * 24 * 60 * 60 + delta.seconds
     if since <= 0:
         # d is in the future compared to now, stop processing.
         return avoid_wrapping(time_strings["minute"] % {"num": 0})
-    for i, (seconds, name) in enumerate(timesince_chunks_adjusted):
+    for i, (seconds, name) in enumerate(time_chunks):
         count = since // seconds
         if count != 0:
             break
@@ -95,13 +96,11 @@ def timesince(d, now=None, reversed=False, time_strings=None, depth=2):
     result = []
     current_depth = 0
 
-    if months <= 0:
-        months = 12 + months
-
-    while i < len(timesince_chunks_adjusted) and current_depth < depth:
-        seconds, name = timesince_chunks_adjusted[i]
+    while i < len(time_chunks) and current_depth < depth:
+        seconds, name = time_chunks[i]
         count = since // seconds
         if name == "month":
+            # count might overshoot if now.month is longer than the month average length
             count = min(count, months)
         if count == 0:
             break
